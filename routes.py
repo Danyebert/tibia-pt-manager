@@ -1,7 +1,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from sqlalchemy import func, or_
 from datetime import datetime
-from models import Charm, Hunt, Imbuement, ImbuementItem, Monster, User, db
+from models import Charm, Hunt, HuntMonsterCharm, Imbuement, ImbuementItem, Monster, User, db
 from app import ELEMENTS
 from auth import admin_required
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -230,27 +230,110 @@ def hunts_list():
 def hunt_form(item_id=None):
     hunt = db.get_or_404(Hunt, item_id) if item_id else Hunt()
     monsters = db.session.scalars(db.select(Monster).order_by(Monster.name)).all()
-    charms = db.session.scalars(db.select(Charm).order_by(Charm.category, Charm.name)).all()
+    major_charms = db.session.scalars(
+        db.select(Charm).where(Charm.category == "Major").order_by(Charm.name)
+    ).all()
+    minor_charms = db.session.scalars(
+        db.select(Charm).where(Charm.category == "Minor").order_by(Charm.name)
+    ).all()
+
     if request.method == "POST":
         hunt.name = request.form["name"].strip()
         hunt.location = request.form["location"].strip()
         hunt.protections = _element_values("protection", with_value=False)
         hunt.weaknesses = _element_values("hunt_weakness", with_value=False)
+
         monster_ids = [int(x) for x in request.form.getlist("monster_ids")]
-        charm_ids = [int(x) for x in request.form.getlist("charm_ids")]
-        hunt.monsters = db.session.scalars(db.select(Monster).where(Monster.id.in_(monster_ids))).all() if monster_ids else []
-        hunt.charms = db.session.scalars(db.select(Charm).where(Charm.id.in_(charm_ids))).all() if charm_ids else []
+        selected_monsters = (
+            db.session.scalars(db.select(Monster).where(Monster.id.in_(monster_ids))).all()
+            if monster_ids else []
+        )
+        hunt.monsters = selected_monsters
         db.session.add(hunt)
+        db.session.flush()
+
+        assignments_by_monster = {
+            assignment.monster_id: assignment
+            for assignment in hunt.monster_charm_assignments
+        }
+
+        for monster_id in monster_ids:
+            assignment = assignments_by_monster.get(monster_id)
+            if assignment is None:
+                assignment = HuntMonsterCharm(hunt_id=hunt.id, monster_id=monster_id)
+                db.session.add(assignment)
+
+            major_id = request.form.get(f"major_charm_{monster_id}", "").strip()
+            minor_id = request.form.get(f"minor_charm_{monster_id}", "").strip()
+            priority_raw = request.form.get(f"charm_priority_{monster_id}", "3").strip()
+
+            assignment.major_charm_id = int(major_id) if major_id else None
+            assignment.minor_charm_id = int(minor_id) if minor_id else None
+            try:
+                assignment.priority = max(1, min(5, int(priority_raw)))
+            except ValueError:
+                assignment.priority = 3
+
+        for monster_id, assignment in assignments_by_monster.items():
+            if monster_id not in monster_ids:
+                db.session.delete(assignment)
+
         db.session.commit()
         flash("Hunt salva com sucesso.", "success")
-        return redirect(url_for("main.hunts_list"))
-    return render_template("hunts/form.html", hunt=hunt, monsters=monsters, charms=charms)
+        return redirect(url_for("main.hunt_view", item_id=hunt.id))
+
+    assignments = {
+        assignment.monster_id: assignment
+        for assignment in hunt.monster_charm_assignments
+    }
+    return render_template(
+        "hunts/form.html",
+        hunt=hunt,
+        monsters=monsters,
+        major_charms=major_charms,
+        minor_charms=minor_charms,
+        assignments=assignments,
+    )
 
 
 @bp.get("/hunts/<int:item_id>")
 def hunt_view(item_id):
     hunt = db.get_or_404(Hunt, item_id)
-    return render_template("hunts/view.html", hunt=hunt)
+    assignments = {
+        assignment.monster_id: assignment
+        for assignment in hunt.monster_charm_assignments
+    }
+
+    # Soma os danos de cada elemento entre todos os monstros da hunt.
+    # Exemplo: Energy 500 + Energy 700 + Energy 300 = Energy 1500.
+    # O cálculo considera todos os tipos de ataque cadastrados, inclusive Physical.
+    damage_by_element = {}
+
+    for monster in hunt.monsters:
+        for attack in (monster.attacks or []):
+            element = attack.get("element")
+            if not element:
+                continue
+            try:
+                damage = int(attack.get("value") or 0)
+            except (TypeError, ValueError):
+                damage = 0
+            damage_by_element[element] = damage_by_element.get(element, 0) + damage
+
+    protection_ranking = sorted(
+        (
+            {"element": element, "damage": damage}
+            for element, damage in damage_by_element.items()
+        ),
+        key=lambda item: (-item["damage"], item["element"]),
+    )
+
+    return render_template(
+        "hunts/view.html",
+        hunt=hunt,
+        assignments=assignments,
+        protection_ranking=protection_ranking,
+    )
 
 
 @bp.post("/hunts/<int:item_id>/delete")

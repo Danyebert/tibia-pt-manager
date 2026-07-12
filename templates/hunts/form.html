@@ -1,3 +1,132 @@
-{% extends 'base.html' %}{% block title %}{{ 'Editar' if hunt.id else 'Nova' }} hunt{% endblock %}{% block content %}
-<div class="page-heading"><div><span class="eyebrow">PLANEJAMENTO</span><h1>{{ 'Editar' if hunt.id else 'Nova' }} hunt</h1></div></div>
-<form method="post" class="panel"><div class="row g-3"><div class="col-md-6"><label class="form-label">Nome da hunt</label><input required class="form-control" name="name" value="{{ hunt.name or '' }}"></div><div class="col-md-6"><label class="form-label">Localização</label><input required class="form-control" name="location" value="{{ hunt.location or '' }}"></div></div><hr><h2 class="h5">Proteções recomendadas</h2>{% with prefix='protection', items=hunt.protections, show_value=false %}{% include '_elements.html' %}{% endwith %}<hr><h2 class="h5">Fraquezas da hunt</h2>{% with prefix='hunt_weakness', items=hunt.weaknesses, show_value=false %}{% include '_elements.html' %}{% endwith %}<hr><h2 class="h5">Monstros</h2><div class="selection-grid">{% for monster in monsters %}<label class="select-card"><input type="checkbox" name="monster_ids" value="{{ monster.id }}" {% if monster in hunt.monsters %}checked{% endif %}><img src="{{ monster.image_url or 'https://placehold.co/100x100/17140f/c9a35a?text=M' }}"><span><strong>{{ monster.name }}</strong><small>{{ monster.experience }} EXP • {{ monster.life }} life</small></span></label>{% else %}<p class="text-secondary">Cadastre monstros antes de criar a hunt.</p>{% endfor %}</div><hr><h2 class="h5">Charms</h2><div class="selection-grid">{% for charm in charms %}<label class="select-card"><input type="checkbox" name="charm_ids" value="{{ charm.id }}" {% if charm in hunt.charms %}checked{% endif %}><img src="{{ charm.image_url or 'https://placehold.co/100x100/17140f/c9a35a?text=C' }}"><span><strong>{{ charm.name }}</strong><small>{{ charm.category }}</small></span></label>{% else %}<p class="text-secondary">Cadastre charms antes de selecioná-los.</p>{% endfor %}</div><div class="form-actions"><a class="btn btn-outline-light" href="{{ url_for('main.hunts_list') }}">Cancelar</a><button class="btn btn-gold">Salvar hunt</button></div></form>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if hunt.id else 'Nova' }} hunt{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">PLANEJAMENTO</span>
+        <h1>{{ 'Editar' if hunt.id else 'Nova' }} hunt</h1>
+    </div>
+</div>
+
+<form method="post" class="panel">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Nome da hunt</label>
+            <input required class="form-control" name="name" value="{{ hunt.name or '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Localização</label>
+            <input required class="form-control" name="location" value="{{ hunt.location or '' }}">
+        </div>
+    </div>
+
+    <hr>
+    <h2 class="h5">Proteções recomendadas</h2>
+    {% with prefix='protection', items=hunt.protections, show_value=false %}
+        {% include '_elements.html' %}
+    {% endwith %}
+
+    <hr>
+    <h2 class="h5">Fraquezas da hunt</h2>
+    {% with prefix='hunt_weakness', items=hunt.weaknesses, show_value=false %}
+        {% include '_elements.html' %}
+    {% endwith %}
+
+    <hr>
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+        <div>
+            <h2 class="h5 mb-1">Monstros e melhores runas</h2>
+            <p class="text-secondary mb-0">Selecione os monstros e defina a melhor Major, Minor e prioridade para cada um.</p>
+        </div>
+    </div>
+
+    <div class="hunt-monster-editor">
+        {% for monster in monsters %}
+            {% set assignment = assignments.get(monster.id) %}
+            {% set selected = monster in hunt.monsters %}
+            <div class="hunt-monster-row" data-monster-row>
+                <div class="hunt-monster-main">
+                    <label class="hunt-monster-check">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            name="monster_ids"
+                            value="{{ monster.id }}"
+                            data-monster-checkbox
+                            {% if selected %}checked{% endif %}
+                        >
+                        <img src="{{ monster.image_url or 'https://placehold.co/100x100/17140f/c9a35a?text=M' }}" alt="{{ monster.name }}">
+                        <span>
+                            <strong>{{ monster.name }}</strong>
+                            <small>{{ monster.experience }} EXP • {{ monster.life }} life</small>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="hunt-charm-fields {% if not selected %}is-disabled{% endif %}" data-charm-fields>
+                    <div>
+                        <label class="form-label">Major Charm</label>
+                        <select class="form-select" name="major_charm_{{ monster.id }}" {% if not selected %}disabled{% endif %}>
+                            <option value="">Nenhuma</option>
+                            {% for charm in major_charms %}
+                                <option value="{{ charm.id }}" {% if assignment and assignment.major_charm_id == charm.id %}selected{% endif %}>
+                                    {{ charm.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Minor Charm</label>
+                        <select class="form-select" name="minor_charm_{{ monster.id }}" {% if not selected %}disabled{% endif %}>
+                            <option value="">Nenhuma</option>
+                            {% for charm in minor_charms %}
+                                <option value="{{ charm.id }}" {% if assignment and assignment.minor_charm_id == charm.id %}selected{% endif %}>
+                                    {{ charm.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Prioridade</label>
+                        <select class="form-select" name="charm_priority_{{ monster.id }}" {% if not selected %}disabled{% endif %}>
+                            {% for priority in range(5, 0, -1) %}
+                                <option value="{{ priority }}" {% if (assignment and assignment.priority == priority) or (not assignment and priority == 3) %}selected{% endif %}>
+                                    {{ priority }} estrela{{ 's' if priority != 1 else '' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p class="text-secondary">Cadastre monstros antes de criar a hunt.</p>
+        {% endfor %}
+    </div>
+
+    <div class="form-actions">
+        <a class="btn btn-outline-light" href="{{ url_for('main.hunts_list') }}">Cancelar</a>
+        <button class="btn btn-gold">Salvar hunt</button>
+    </div>
+</form>
+
+<script>
+document.querySelectorAll('[data-monster-row]').forEach((row) => {
+    const checkbox = row.querySelector('[data-monster-checkbox]');
+    const fields = row.querySelector('[data-charm-fields]');
+    const controls = fields.querySelectorAll('select');
+
+    const updateState = () => {
+        fields.classList.toggle('is-disabled', !checkbox.checked);
+        controls.forEach((control) => {
+            control.disabled = !checkbox.checked;
+        });
+    };
+
+    checkbox.addEventListener('change', updateState);
+    updateState();
+});
+</script>
+{% endblock %}

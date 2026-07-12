@@ -68,6 +68,31 @@ class Hunt(TimestampMixin, db.Model):
     weaknesses = db.Column(db.JSON, nullable=False, default=list)
     monsters = db.relationship("Monster", secondary=hunt_monsters, lazy="selectin")
     charms = db.relationship("Charm", secondary=hunt_charms, lazy="selectin")
+    monster_charm_assignments = db.relationship(
+        "HuntMonsterCharm",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="HuntMonsterCharm.priority.desc()",
+    )
+
+
+class HuntMonsterCharm(TimestampMixin, db.Model):
+    __tablename__ = "hunt_monster_charms"
+
+    id = db.Column(db.Integer, primary_key=True)
+    hunt_id = db.Column(db.Integer, db.ForeignKey("hunts.id", ondelete="CASCADE"), nullable=False, index=True)
+    monster_id = db.Column(db.Integer, db.ForeignKey("monsters.id", ondelete="CASCADE"), nullable=False, index=True)
+    major_charm_id = db.Column(db.Integer, db.ForeignKey("charms.id", ondelete="SET NULL"))
+    minor_charm_id = db.Column(db.Integer, db.ForeignKey("charms.id", ondelete="SET NULL"))
+    priority = db.Column(db.Integer, nullable=False, default=3)
+
+    monster = db.relationship("Monster", lazy="joined")
+    major_charm = db.relationship("Charm", foreign_keys=[major_charm_id], lazy="joined")
+    minor_charm = db.relationship("Charm", foreign_keys=[minor_charm_id], lazy="joined")
+
+    __table_args__ = (
+        UniqueConstraint("hunt_id", "monster_id", name="uq_hunt_monster_charm"),
+    )
 
 
 class Imbuement(TimestampMixin, db.Model):
