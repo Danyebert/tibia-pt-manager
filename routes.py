@@ -1,7 +1,7 @@
-import os
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from sqlalchemy import func, or_
-from models import Charm, Hunt, Imbuement, ImbuementItem, Monster, db
+from datetime import datetime
+from models import Charm, Hunt, Imbuement, ImbuementItem, Monster, User, db
 from app import ELEMENTS
 from auth import admin_required
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -36,20 +36,21 @@ def admin_login():
     if session.get("is_admin"):
         return redirect(url_for("main.admin_panel"))
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        username = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "")
-        expected_user = os.getenv("ADMIN_USERNAME", "admin")
-        password_hash = os.getenv("ADMIN_PASSWORD_HASH")
-        expected_password = os.getenv("ADMIN_PASSWORD", "admin123")
-        valid_password = check_password_hash(password_hash, password) if password_hash else password == expected_password
-        if username == expected_user and valid_password:
+        user = db.session.scalar(db.select(User).where(User.username == username))
+        if user and user.is_admin and check_password_hash(user.password_hash, password):
+            user.last_login_at = datetime.utcnow()
+            db.session.commit()
             session.clear()
+            session["user_id"] = user.id
             session["is_admin"] = True
-            session["admin_username"] = username
+            session["admin_username"] = user.username
+            session["admin_name"] = user.name
             flash("Login realizado com sucesso.", "success")
             next_url = request.args.get("next")
             return redirect(next_url if next_url and next_url.startswith("/") else url_for("main.admin_panel"))
-        flash("Usuário ou senha inválidos.", "danger")
+        flash("Usuário ou senha inválidos, ou usuário inativo.", "danger")
     return render_template("admin/login.html")
 
 
@@ -61,6 +62,7 @@ def admin_panel():
         "charms": db.session.scalar(db.select(func.count()).select_from(Charm)),
         "hunts": db.session.scalar(db.select(func.count()).select_from(Hunt)),
         "imbuements": db.session.scalar(db.select(func.count()).select_from(Imbuement)),
+        "users": db.session.scalar(db.select(func.count()).select_from(User)),
     }
     return render_template("admin/panel.html", stats=stats)
 
@@ -70,6 +72,58 @@ def admin_logout():
     session.clear()
     flash("Você saiu da área administrativa.", "success")
     return redirect(url_for("main.dashboard"))
+
+
+@bp.get("/admin/users")
+@admin_required
+def users_list():
+    users = db.session.scalars(db.select(User).order_by(User.name, User.username)).all()
+    return render_template("admin/users/list.html", users=users)
+
+
+@bp.route("/admin/users/new", methods=["GET", "POST"])
+@bp.route("/admin/users/<int:item_id>/edit", methods=["GET", "POST"])
+@admin_required
+def user_form(item_id=None):
+    user = db.get_or_404(User, item_id) if item_id else User(role="admin", active=True)
+    if request.method == "POST":
+        username = request.form.get("username", "").strip().lower()
+        password = request.form.get("password", "")
+        existing = db.session.scalar(db.select(User).where(User.username == username, User.id != (user.id or 0)))
+        if existing:
+            flash("Este nome de usuário já está cadastrado.", "danger")
+            return render_template("admin/users/form.html", user=user)
+        user.name = request.form.get("name", "").strip()
+        user.username = username
+        user.role = "admin"
+        user.active = request.form.get("active") == "on"
+        if not user.id and not password:
+            flash("Informe uma senha para o novo administrador.", "danger")
+            return render_template("admin/users/form.html", user=user)
+        if password:
+            user.password_hash = generate_password_hash(password)
+        db.session.add(user)
+        db.session.commit()
+        flash("Administrador salvo com sucesso.", "success")
+        return redirect(url_for("main.users_list"))
+    return render_template("admin/users/form.html", user=user)
+
+
+@bp.post("/admin/users/<int:item_id>/delete")
+@admin_required
+def user_delete(item_id):
+    user = db.get_or_404(User, item_id)
+    if user.id == session.get("user_id"):
+        flash("Você não pode excluir o usuário que está usando no momento.", "warning")
+        return redirect(url_for("main.users_list"))
+    active_admins = db.session.scalar(db.select(func.count()).select_from(User).where(User.role == "admin", User.active.is_(True)))
+    if user.active and active_admins <= 1:
+        flash("Não é possível excluir o último administrador ativo.", "warning")
+        return redirect(url_for("main.users_list"))
+    db.session.delete(user)
+    db.session.commit()
+    flash("Administrador excluído.", "success")
+    return redirect(url_for("main.users_list"))
 
 
 @bp.get("/")

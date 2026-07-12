@@ -3,10 +3,11 @@
 {% block content %}
 <div class="page-heading"><div><span class="eyebrow">ADMINISTRAÇÃO</span><h1>Painel administrativo</h1><p class="text-secondary mb-0">Gerencie todo o conteúdo exibido aos membros.</p></div></div>
 <div class="row g-3 mb-4">
-{% for label, value, icon, endpoint in [('Monstros',stats.monsters,'bi-bug','main.monsters_list'),('Charms',stats.charms,'bi-gem','main.charms_list'),('Hunts',stats.hunts,'bi-map','main.hunts_list'),('Imbuements',stats.imbuements,'bi-stars','main.imbuements_list')] %}
+{% for label, value, icon, endpoint in [('Monstros',stats.monsters,'bi-bug','main.monsters_list'),('Charms',stats.charms,'bi-gem','main.charms_list'),('Hunts',stats.hunts,'bi-map','main.hunts_list'),('Imbuements',stats.imbuements,'bi-stars','main.imbuements_list'),('Administradores',stats.users,'bi-people','main.users_list')] %}
 <div class="col-6 col-lg-3"><a class="text-decoration-none" href="{{ url_for(endpoint) }}"><div class="stat-card h-100"><i class="bi {{ icon }}"></i><div><strong>{{ value }}</strong><span>{{ label }}</span></div></div></a></div>{% endfor %}
 </div>
 <div class="row g-3">
+  <div class="col-md-6 col-xl-3"><a class="admin-action" href="{{ url_for('main.users_list') }}"><i class="bi bi-people"></i><strong>Administradores</strong><span>Gerenciar acessos</span></a></div>
   <div class="col-md-6 col-xl-3"><a class="admin-action" href="{{ url_for('main.monster_form') }}"><i class="bi bi-plus-circle"></i><strong>Novo monstro</strong><span>Cadastrar criatura</span></a></div>
   <div class="col-md-6 col-xl-3"><a class="admin-action" href="{{ url_for('main.charm_form') }}"><i class="bi bi-plus-circle"></i><strong>Novo charm</strong><span>Cadastrar runa</span></a></div>
   <div class="col-md-6 col-xl-3"><a class="admin-action" href="{{ url_for('main.hunt_form') }}"><i class="bi bi-plus-circle"></i><strong>Nova hunt</strong><span>Montar planejamento</span></a></div>

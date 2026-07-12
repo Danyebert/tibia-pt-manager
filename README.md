@@ -27,8 +27,8 @@ Sistema web para organizar monstros, charms, hunts e imbuements de uma party de 
 ### Windows PowerShell
 
 ```powershell
-py -3.13 -m venv .venv
-.\.venv\Scripts\Activate.ps1
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 copy .env.example .env
 python main.py
@@ -41,7 +41,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-flask --app run.py run --host=0.0.0.0 --port=5000 --debug --no-reload
+flask --app main.py run --host=0.0.0.0 --port=5000 --debug --no-reload
 python main.py
 ```
 

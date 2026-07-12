@@ -23,6 +23,22 @@ class TimestampMixin:
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
+class User(TimestampMixin, db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    username = db.Column(db.String(80), nullable=False, unique=True, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="admin")
+    active = db.Column(db.Boolean, nullable=False, default=True)
+    last_login_at = db.Column(db.DateTime)
+
+    @property
+    def is_admin(self):
+        return self.role == "admin" and self.active
+
+
 class Monster(TimestampMixin, db.Model):
     __tablename__ = "monsters"
     id = db.Column(db.Integer, primary_key=True)
