@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Login administrativo{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="panel auth-card">
+    <div class="text-center mb-4"><span class="brand-rune auth-rune">T</span><span class="eyebrow d-block mt-3">ÁREA RESTRITA</span><h1 class="h3 mt-2">Administrador</h1><p class="text-secondary">Entre para cadastrar, editar ou excluir informações.</p></div>
+    <form method="post">
+      <div class="mb-3"><label class="form-label">Usuário</label><input class="form-control" name="username" autocomplete="username" required autofocus></div>
+      <div class="mb-4"><label class="form-label">Senha</label><input type="password" class="form-control" name="password" autocomplete="current-password" required></div>
+      <button class="btn btn-gold w-100"><i class="bi bi-shield-lock"></i> Entrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

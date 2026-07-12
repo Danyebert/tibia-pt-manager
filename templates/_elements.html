@@ -1,0 +1,4 @@
+<div class="row g-2">
+{% for element in ELEMENTS %}{% set key=element|lower|replace(' ','_') %}{% set saved=(items or [])|selectattr('element','equalto',element)|list %}
+<div class="col-md-6 col-xl-4"><div class="element-control"><div class="form-check"><input class="form-check-input" type="checkbox" name="{{ prefix }}_{{ key }}" id="{{ prefix }}_{{ key }}" {% if saved %}checked{% endif %}><label class="form-check-label" for="{{ prefix }}_{{ key }}">{{ element }}</label></div>{% if show_value %}<div class="input-group input-group-sm"><input class="form-control" type="number" name="{{ prefix }}_{{ key }}_value" value="{{ saved[0].value if saved else '' }}" min="0"><span class="input-group-text">{{ suffix }}</span></div>{% endif %}</div></div>
+{% endfor %}</div>
