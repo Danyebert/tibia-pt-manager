@@ -148,6 +148,15 @@ def monsters_list():
     return render_template("monsters/list.html", monsters=monsters, q=q)
 
 
+@bp.get("/monsters/<int:item_id>")
+def monster_view(item_id):
+    monster = db.get_or_404(Monster, item_id)
+    related_hunts = db.session.scalars(
+        db.select(Hunt).where(Hunt.monsters.any(Monster.id == monster.id)).order_by(Hunt.name)
+    ).all()
+    return render_template("monsters/view.html", monster=monster, related_hunts=related_hunts)
+
+
 @bp.route("/monsters/new", methods=["GET", "POST"])
 @bp.route("/monsters/<int:item_id>/edit", methods=["GET", "POST"])
 @admin_required
@@ -185,6 +194,20 @@ def charms_list():
         stmt = stmt.where(or_(Charm.name.ilike(f"%{q}%"), Charm.description.ilike(f"%{q}%"), Charm.category.ilike(f"%{q}%")))
     charms = db.session.scalars(stmt.order_by(Charm.category, Charm.name)).all()
     return render_template("charms/list.html", charms=charms, q=q)
+
+
+@bp.get("/charms/<int:item_id>")
+def charm_view(item_id):
+    charm = db.get_or_404(Charm, item_id)
+    assignments = db.session.scalars(
+        db.select(HuntMonsterCharm).where(
+            or_(
+                HuntMonsterCharm.major_charm_id == charm.id,
+                HuntMonsterCharm.minor_charm_id == charm.id,
+            )
+        )
+    ).all()
+    return render_template("charms/view.html", charm=charm, assignments=assignments)
 
 
 @bp.route("/charms/new", methods=["GET", "POST"])
@@ -354,6 +377,12 @@ def imbuements_list():
         stmt = stmt.where(or_(Imbuement.name.ilike(f"%{q}%"), Imbuement.level.ilike(f"%{q}%"), Imbuement.kind.ilike(f"%{q}%")))
     imbuements = db.session.scalars(stmt.order_by(Imbuement.name, Imbuement.level)).all()
     return render_template("imbuements/list.html", imbuements=imbuements, q=q)
+
+
+@bp.get("/imbuements/<int:item_id>")
+def imbuement_view(item_id):
+    imbuement = db.get_or_404(Imbuement, item_id)
+    return render_template("imbuements/view.html", imbuement=imbuement)
 
 
 @bp.route("/imbuements/new", methods=["GET", "POST"])

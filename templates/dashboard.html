@@ -1,15 +1,19 @@
-{% extends 'base.html' %}{% block title %}Início • Tibia PT Manager{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Início • Tibia PT Manager{% endblock %}
 {% block content %}
-<section class="hero-panel p-4 p-lg-5 mb-4">
-  <div class="row align-items-center g-4"><div class="col-lg-8">
-    <span class="eyebrow">CENTRAL DA PARTY</span><h1 class="display-5 fw-bold mt-2">Planeje hunts, charms e imbuements.</h1>
-    <p class="lead text-secondary mb-0">Cadastre as criaturas, organize as proteções e deixe sua PT preparada antes de entrar na hunt.</p>
-  </div><div class="col-lg-4 text-lg-end">{% if session.get('is_admin') %}<a class="btn btn-gold btn-lg" href="{{ url_for('main.hunt_form') }}"><i class="bi bi-plus-lg"></i> Nova Hunt</a>{% else %}<a class="btn btn-outline-light btn-lg" href="{{ url_for('main.hunts_list') }}"><i class="bi bi-search"></i> Explorar hunts</a>{% endif %}</div></div>
+<section class="hero-parchment mb-4">
+  <div class="row align-items-center g-4">
+    <div class="col-lg-8"><span class="section-kicker">CENTRAL DA PARTY</span><h1>Prepare sua próxima hunt</h1><p>Monstros, charms, proteções e imbuements reunidos em um só lugar para sua equipe entrar preparada.</p></div>
+    <div class="col-lg-4 text-lg-end">{% if session.get('is_admin') %}<a class="btn btn-gold btn-lg" href="{{ url_for('main.hunt_form') }}"><i class="bi bi-plus-lg"></i> Nova Hunt</a>{% else %}<a class="btn btn-wood btn-lg" href="{{ url_for('main.hunts_list') }}"><i class="bi bi-search"></i> Explorar hunts</a>{% endif %}</div>
+  </div>
 </section>
 <div class="row g-3 mb-4">
 {% for label, value, icon, endpoint in [('Monstros',stats.monsters,'bi-bug','main.monsters_list'),('Charms',stats.charms,'bi-gem','main.charms_list'),('Hunts',stats.hunts,'bi-map','main.hunts_list'),('Imbuements',stats.imbuements,'bi-stars','main.imbuements_list')] %}
-<div class="col-6 col-lg-3"><a class="text-decoration-none" href="{{ url_for(endpoint) }}"><div class="stat-card h-100"><i class="bi {{ icon }}"></i><div><strong>{{ value }}</strong><span>{{ label }}</span></div></div></a></div>{% endfor %}
+<div class="col-6 col-xl-3"><a class="stat-tile" href="{{ url_for(endpoint) }}"><i class="bi {{ icon }}"></i><div><strong>{{ value }}</strong><span>{{ label }}</span></div></a></div>
+{% endfor %}
 </div>
-<div class="panel"><div class="panel-header"><div><span class="eyebrow">PLANEJAMENTO</span><h2 class="h4 mb-0">Hunts recentes</h2></div><a href="{{ url_for('main.hunts_list') }}" class="btn btn-outline-light btn-sm">Ver todas</a></div>
-{% if latest_hunts %}<div class="row g-3">{% for hunt in latest_hunts %}<div class="col-md-6"><a href="{{ url_for('main.hunt_view', item_id=hunt.id) }}" class="hunt-mini"><div><strong>{{ hunt.name }}</strong><small><i class="bi bi-geo-alt"></i> {{ hunt.location }}</small></div><span>{{ hunt.monsters|length }} monstros</span></a></div>{% endfor %}</div>{% else %}<div class="empty-state">Nenhuma hunt cadastrada ainda.</div>{% endif %}</div>
+<section class="tibia-window">
+  <div class="window-title"><div><span class="section-kicker">PLANEJAMENTO</span><h2>Hunts recentes</h2></div><a href="{{ url_for('main.hunts_list') }}" class="btn btn-wood btn-sm">Ver todas</a></div>
+  {% if latest_hunts %}<div class="row g-3">{% for hunt in latest_hunts %}<div class="col-md-6"><a href="{{ url_for('main.hunt_view', item_id=hunt.id) }}" class="hunt-entry"><div><strong>{{ hunt.name }}</strong><small><i class="bi bi-geo-alt"></i> {{ hunt.location }}</small></div><span>{{ hunt.monsters|length }} monstros</span></a></div>{% endfor %}</div>{% else %}<div class="empty-state">Nenhuma hunt cadastrada ainda.</div>{% endif %}
+</section>
 {% endblock %}
