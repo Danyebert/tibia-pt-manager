@@ -113,3 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// Navegação lateral responsiva.
+document.addEventListener('DOMContentLoaded', () => {
+  const sidebar = document.querySelector('#appSidebar');
+  const toggle = document.querySelector('[data-sidebar-toggle]');
+  const backdrop = document.querySelector('[data-sidebar-backdrop]');
+  const closeSidebar = () => { sidebar?.classList.remove('open'); backdrop?.classList.remove('show'); };
+  toggle?.addEventListener('click', () => { sidebar?.classList.toggle('open'); backdrop?.classList.toggle('show'); });
+  backdrop?.addEventListener('click', closeSidebar);
+  sidebar?.querySelectorAll('a').forEach(link => link.addEventListener('click', closeSidebar));
+});

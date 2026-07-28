@@ -1,19 +1,49 @@
 {% extends 'base.html' %}
-{% block title %}Início • Tibia PT Manager{% endblock %}
+{% block title %}Dashboard • Tibia PT Manager{% endblock %}
 {% block content %}
-<section class="hero-parchment mb-4">
-  <div class="row align-items-center g-4">
-    <div class="col-lg-8"><span class="section-kicker">CENTRAL DA PARTY</span><h1>Prepare sua próxima hunt</h1><p>Monstros, charms, proteções e imbuements reunidos em um só lugar para sua equipe entrar preparada.</p></div>
-    <div class="col-lg-4 text-lg-end">{% if session.get('is_admin') %}<a class="btn btn-gold btn-lg" href="{{ url_for('main.hunt_form') }}"><i class="bi bi-plus-lg"></i> Nova Hunt</a>{% else %}<a class="btn btn-wood btn-lg" href="{{ url_for('main.hunts_list') }}"><i class="bi bi-search"></i> Explorar hunts</a>{% endif %}</div>
+<section class="hero-ek">
+  <div class="hero-ek-content">
+    <span class="section-kicker">CENTRAL DA PARTY</span>
+    <h1>Prepare sua PT para a próxima batalha.</h1>
+    <p>Organize monstros, hunts, charms e imbuements em uma interface criada para decisões rápidas.</p>
+    <div class="hero-actions">
+      {% if session.get('is_admin') %}<a class="btn btn-gold" href="{{ url_for('main.hunt_form') }}"><i class="bi bi-plus-lg"></i> Nova Hunt</a>{% endif %}
+      <a class="btn btn-ghost" href="{{ url_for('main.hunts_list') }}"><i class="bi bi-map"></i> Explorar Hunts</a>
+    </div>
+  </div>
+  <div class="hero-ek-art" aria-hidden="true">
+    <div class="hero-knight"><i class="bi bi-shield-shaded"></i></div>
   </div>
 </section>
-<div class="row g-3 mb-4">
-{% for label, value, icon, endpoint in [('Monstros',stats.monsters,'bi-bug','main.monsters_list'),('Charms',stats.charms,'bi-gem','main.charms_list'),('Hunts',stats.hunts,'bi-map','main.hunts_list'),('Imbuements',stats.imbuements,'bi-stars','main.imbuements_list')] %}
-<div class="col-6 col-xl-3"><a class="stat-tile" href="{{ url_for(endpoint) }}"><i class="bi {{ icon }}"></i><div><strong>{{ value }}</strong><span>{{ label }}</span></div></a></div>
+
+<div class="stat-grid">
+{% for label, value, icon, endpoint, tone in [('Monstros',stats.monsters,'bi-bug-fill','main.monsters_list','red'),('Hunts',stats.hunts,'bi-map-fill','main.hunts_list','gold'),('Charms',stats.charms,'bi-gem','main.charms_list','purple'),('Imbuements',stats.imbuements,'bi-stars','main.imbuements_list','blue')] %}
+<a class="modern-stat {{ tone }}" href="{{ url_for(endpoint) }}"><span class="stat-icon"><i class="bi {{ icon }}"></i></span><span><strong>{{ value }}</strong><small>{{ label }}</small></span><i class="bi bi-arrow-up-right stat-arrow"></i></a>
 {% endfor %}
 </div>
-<section class="tibia-window">
-  <div class="window-title"><div><span class="section-kicker">PLANEJAMENTO</span><h2>Hunts recentes</h2></div><a href="{{ url_for('main.hunts_list') }}" class="btn btn-wood btn-sm">Ver todas</a></div>
-  {% if latest_hunts %}<div class="row g-3">{% for hunt in latest_hunts %}<div class="col-md-6"><a href="{{ url_for('main.hunt_view', item_id=hunt.id) }}" class="hunt-entry"><div><strong>{{ hunt.name }}</strong><small><i class="bi bi-geo-alt"></i> {{ hunt.location }}</small></div><span>{{ hunt.monsters|length }} monstros</span></a></div>{% endfor %}</div>{% else %}<div class="empty-state">Nenhuma hunt cadastrada ainda.</div>{% endif %}
-</section>
+
+<div class="dashboard-grid">
+  <section class="surface-card dashboard-feature">
+    <div class="surface-header"><div><span class="section-kicker">PLANEJAMENTO</span><h2>Hunts recentes</h2></div><a href="{{ url_for('main.hunts_list') }}">Ver todas <i class="bi bi-arrow-right"></i></a></div>
+    <div class="recent-hunts">
+      {% for hunt in latest_hunts %}
+      <a class="recent-hunt" href="{{ url_for('main.hunt_view', item_id=hunt.id) }}">
+        <span class="hunt-emblem"><i class="bi bi-compass-fill"></i></span>
+        <span class="recent-hunt-main"><strong>{{ hunt.name }}</strong><small><i class="bi bi-geo-alt"></i> {{ hunt.location }}</small></span>
+        <span class="hunt-count">{{ hunt.monsters|length }}<small>monstros</small></span>
+        <i class="bi bi-chevron-right"></i>
+      </a>
+      {% else %}<div class="empty-state">Nenhuma hunt cadastrada ainda.</div>{% endfor %}
+    </div>
+  </section>
+
+  <aside class="surface-card quick-panel">
+    <div class="surface-header"><div><span class="section-kicker">ATALHOS</span><h2>Ações rápidas</h2></div></div>
+    <div class="quick-actions">
+      <a href="{{ url_for('main.monsters_list') }}"><span><i class="bi bi-bug-fill"></i></span><strong>Consultar bestiário</strong><small>Fraquezas e ataques</small></a>
+      <a href="{{ url_for('main.charms_list') }}"><span><i class="bi bi-gem"></i></span><strong>Ver charms</strong><small>Major e Minor</small></a>
+      <a href="{{ url_for('main.imbuements_list') }}"><span><i class="bi bi-stars"></i></span><strong>Planejar imbuements</strong><small>Materiais por nível</small></a>
+    </div>
+  </aside>
+</div>
 {% endblock %}

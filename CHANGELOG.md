@@ -22,3 +22,9 @@ O projeto utiliza versionamento semântico.
 - Integração com PostgreSQL Neon.
 - Configuração para execução local.
 - Configuração para publicação na Vercel.
+## 1.5.0
+- Nova identidade visual dark fantasy inspirada no universo de Tibia.
+- Sidebar fixa e responsiva com navegação por módulos.
+- Dashboard redesenhado com destaque para Elite Knight.
+- Novos cards, tabelas, formulários, telas de detalhe e estados visuais.
+- Melhorias de responsividade para desktop, tablet e celular.
