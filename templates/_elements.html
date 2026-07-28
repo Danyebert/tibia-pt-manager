@@ -1,4 +1,31 @@
-<div class="row g-2">
-{% for element in ELEMENTS %}{% set key=element|lower|replace(' ','_') %}{% set saved=(items or [])|selectattr('element','equalto',element)|list %}
-<div class="col-md-6 col-xl-4"><div class="element-control"><div class="form-check"><input class="form-check-input" type="checkbox" name="{{ prefix }}_{{ key }}" id="{{ prefix }}_{{ key }}" {% if saved %}checked{% endif %}><label class="form-check-label" for="{{ prefix }}_{{ key }}">{{ element }}</label></div>{% if show_value %}<div class="input-group input-group-sm"><input class="form-control" type="number" name="{{ prefix }}_{{ key }}_value" value="{{ saved[0].value if saved else '' }}" min="0"><span class="input-group-text">{{ suffix }}</span></div>{% endif %}</div></div>
-{% endfor %}</div>
+{% set selected_keys = [] %}
+{% for item in (items or []) %}
+  {% if item.element %}{% set _ = selected_keys.append(item.element) %}{% endif %}
+{% endfor %}
+
+<div class="element-combobox" data-element-combobox data-prefix="{{ prefix }}" data-show-value="{{ 'true' if show_value else 'false' }}">
+  <label class="form-label" for="{{ prefix }}_selector">Pesquisar e selecionar</label>
+  <select id="{{ prefix }}_selector" class="form-select element-search-select" multiple data-placeholder="Digite o nome do elemento...">
+    {% for element in ELEMENTS %}
+      <option value="{{ element }}" {% if element in selected_keys %}selected{% endif %}>{{ element }}</option>
+    {% endfor %}
+  </select>
+
+  <div class="selected-elements mt-3" data-selected-elements>
+    {% for element in ELEMENTS %}
+      {% set key = element|lower|replace(' ','_') %}
+      {% set saved = (items or [])|selectattr('element','equalto',element)|list %}
+      <div class="selected-element-row {% if not saved %}d-none{% endif %}" data-element-row="{{ element }}">
+        <input type="checkbox" class="d-none" name="{{ prefix }}_{{ key }}" data-element-checkbox {% if saved %}checked{% endif %}>
+        <div class="selected-element-name"><i class="bi bi-shield-shaded"></i><strong>{{ element }}</strong></div>
+        {% if show_value %}
+          <div class="input-group input-group-sm selected-element-value">
+            <input class="form-control" type="number" name="{{ prefix }}_{{ key }}_value" value="{{ saved[0].value if saved else '' }}" min="0" data-element-value>
+            <span class="input-group-text">{{ suffix }}</span>
+          </div>
+        {% endif %}
+        <button type="button" class="btn btn-sm btn-outline-danger element-remove" data-remove-element="{{ element }}" aria-label="Remover {{ element }}"><i class="bi bi-x-lg"></i></button>
+      </div>
+    {% endfor %}
+  </div>
+</div>
